@@ -1,0 +1,60 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.0.33
+    container_name: paygo-server-db
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - mysqldata-paygo:/var/lib/mysql   
+    env_file:
+      - .env
+      
+  mailhug:
+    image: mailhog/mailhog:latest
+    container_name: mailhug
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 1025:1025
+      - 8025:8025
+    env_file:
+      - .env
+      
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 9000:9000
+    volumes:
+      - maven_repo:/root/.m2/repository
+    env_file:
+      - .env
+    depends_on:
+      - flyway
+    working_dir: /opt/paygo/spring-service-gateway/target
+    command: ["java", "-jar", "/opt/paygo/spring-service-gateway/target/spring-service-gateway-0.0.1-SNAPSHOT.jar"]
+
+  flyway:
+    image: flyway/flyway:latest
+    volumes:
+      - ./spring-service-gateway/src/main/resources/db/migration:/flyway/sql
+    command: ["-url=jdbc:mysql://paygo-server-db:3306/${MYSQL_DATABASE}?allowPublicKeyRetrieval=true", "-user=${MYSQL_USER}", "-password=${MYSQL_PASSWORD}", "migrate"]
+    env_file:
+      - .env
+    depends_on:
+      - db 
+      
+networks:
+  default:
+    external:
+      name: gititdocs
+
+volumes:
+  maven_repo:
+    driver: local
+  mysqldata-paygo:
+    driver: local
+  src:
+    driver: local

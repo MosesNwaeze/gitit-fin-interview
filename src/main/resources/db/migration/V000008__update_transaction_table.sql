@@ -1,0 +1,1 @@
+ALTER TABLE `transactions` add column `recipient_id` varchar(36) DEFAULT NULL;

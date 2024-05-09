@@ -1,0 +1,1 @@
+alter table `users` add column `agent_id` varchar(255);
